@@ -1,0 +1,59 @@
+version: '3'
+
+services:
+  mysql:
+    build:
+      context: ./build/mysql
+      args:
+        TIME_ZONE: ${GLOBAL_TIME_ZONE}
+    privileged: true
+    tty: true
+    volumes:
+      - ./build/mysql/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
+      - mysql-data:/var/lib/mysql
+      - ./build/mysql/log:/var/log/mysql
+    ports:
+      - "${MYSQL_PORT}:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD}
+
+  redis:
+    build:
+      context: ./build/redis
+      args:
+        TIME_ZONE: ${GLOBAL_TIME_ZONE}
+    privileged: true
+    tty: true
+    volumes:
+      - ./build/redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./build/redis/log:/var/log/redis
+    ports:
+      - "${REDIS_PORT}:6379"
+
+  python3:
+    build:
+      context: ./build/python
+      args:
+        TIME_ZONE: ${GLOBAL_TIME_ZONE}
+    ports: 
+      - "${API_PORT}:${API_PORT}"
+    privileged: true
+    tty: true
+    volumes:
+      - ${WORK_DIR}:/data
+
+  go:
+    build:
+      context: ./build/go
+      args:
+        TIME_ZONE: ${GLOBAL_TIME_ZONE}
+    tty: true
+    privileged: true
+    volumes:
+      - ${WORK_DIR}:/data
+    depends_on: 
+      - python3
+      - redis
+
+volumes:
+  mysql-data:
